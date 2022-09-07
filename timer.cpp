@@ -46,13 +46,15 @@ Timer::Timer() : handleFunc_(nullptr), invalid_(false), addr_(this)
 
 Timer::~Timer()
 {
-    if (!invalid_)
-        TimerSch::GetInstance().DelTimer(shared_from_this());
+    /** 要释放了，说明没有引用了，TimerSch中也没有了，不用重复释放 */
+    // if (!invalid_)
+    //     TimerSch::GetInstance().DelTimer(shared_from_this());
 }
 
-void Timer::Start(uint32_t timeo_ms, std::function<void(void *addr)> func)
+void Timer::Start(uint32_t timeo_ms, std::function<void(void *addr, bool release)> func)
 {
-    if (handleFunc_ == nullptr) {
+    /** handleFunc_ 是空，说明还没有启动，此时可以启动 */
+    if (handleFunc_ == nullptr && func) {
         timePoint_ = steady_clock::now() + duration<uint32_t, std::milli>(timeo_ms);
         handleFunc_ = func;
         TimerSch::GetInstance().AddTimer(shared_from_this());
@@ -65,11 +67,11 @@ void Timer::UpdateTimeo(uint32_t timeo_ms)
     TimerSch::GetInstance().UpdateTimer(shared_from_this(), tp);
 }
 
-void Timer::ForceTimeOut(void)
+void Timer::ForceTimeOut(bool release)
 {
     if (!invalid_) {
         TimerSch::GetInstance().DelTimer(shared_from_this());
-        DoHnadle();
+        DoHnadle(release);
     }
 }
 

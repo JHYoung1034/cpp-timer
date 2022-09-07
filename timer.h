@@ -22,20 +22,20 @@ public:
     static TimerPtr CreateTimer() {
         return std::shared_ptr<Timer>(new Timer);
     }
-
+    Timer();
     ~Timer();
 
-    void Start(uint32_t timeo_ms, std::function<void(void *addr)> func);
+    void Start(uint32_t timeo_ms, std::function<void(void *addr, bool release)> func);
     void UpdateTimeo(uint32_t timeo);
-    void ForceTimeOut(void);
+    void ForceTimeOut(bool release);
     steady_clock::time_point GetTimePoint(void) const {
         return timePoint_;
     }
     bool Invalid(void) const { return invalid_; }
 
     /** Do not call this function by Timer */
-    inline void DoHnadle(void) { 
-        handleFunc_(addr_);
+    inline void DoHnadle(bool release = true) { 
+        handleFunc_(addr_, release);
         invalid_ = true;
     }
     void *GetAddress(void) const { return addr_; }
@@ -47,10 +47,9 @@ public:
     Timer operator=(const Timer &t) = delete;
 
 private:
-    Timer();
 
     steady_clock::time_point    timePoint_;
-    std::function<void(void *addr)>       handleFunc_;
+    std::function<void(void *addr, bool release)>       handleFunc_;
     std::atomic<bool>           invalid_;
 
     void                        *addr_;
